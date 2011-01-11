@@ -1,3 +1,4 @@
+/*!
 // ==UserScript==
 // @name NoMouse
 // @namespace http://github.com/brendoncrawford/nomouse
@@ -10,6 +11,7 @@
 //     holding down activation key(s), select the letters corresponding
 //     to the item you want to click.
 // ==/UserScript==
+*/
 
 /*global window, unsafeWindow, GM_getValue, GM_setValue, XPathResult */
 "use strict";
