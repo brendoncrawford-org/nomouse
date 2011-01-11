@@ -212,7 +212,7 @@
             kc.keyStack = {};
         }, 30000);
         return true;
-    }
+    };
 
     /**
      * Process
@@ -221,17 +221,17 @@
      */
     kc.process = function (_) {
         var e, action, popper, exists, popper_first, popper_last;
-        if(_) {
+        if (_) {
             e = _;
         }
-        else if(window.event) {
+        else if (window.event) {
             e = window.event;
         }
         else {
             return true;
         }
         kc.clearStack();
-        action = kc.getAction( e.keyCode, e.charCode );
+        action = kc.getAction(e.keyCode, e.charCode);
         if (e.type === 'keydown' && !action.printable && 
                 action.found && !kc.searchStack({name:action.name})) {
             kc.pushStack(action.name, action);
@@ -243,132 +243,162 @@
                 kc.dispatch(action, 'down', e);
             }
             else {
-                kc.dispatch(action, 'press', e);        
+                kc.dispatch(action, 'press', e);     
             }
         }
-    else if( e.type === 'keyup' ) {
-        if( action.found ) {
-         popper = kc.searchStack( {keyCode:action.keyCode} );
-        }
-        else {
-         popper = kc.searchStack({position:'last'});
-        }
-     kc.dispatch(action, 'up', e);
-     kc.popStack(popper.name);
-        //ff-win alt bug
-        //since we cant register a keyup for alt when it is ustacked below anther character,
-        //we need to fake register the keyup when the key above it is registered
-        //this is not a perfect implementation, but it works for the most part
-        if( kc.p.o.win && kc.p.b.gecko ) {
-         popper_first = kc.searchStack({position:'first'});
-         popper_last = kc.searchStack({position:'last'});
-            if(popper_last && popper_last.name === 'ALT') {
-                if(
-                    (action.name === 'SHIFT' || action.name === 'CONTROL') ||
-                    (popper_first && popper_first.name === 'ALT')
-                ){
-                 kc.dispatch(action, 'up', e);
-                 kc.popStack('ALT');
-                }
-                else {
-                 //nothing
-                }
+        else if( e.type === 'keyup' ) {
+            if (action.found) {
+                popper = kc.searchStack({keyCode:action.keyCode});
             }
-        }
-    }
-}
-
-kc.clone = function(arr) {
- var i, _i, temp;
-    if( typeof arr !== 'object' ) {
-     return arr;
-    }
-    else {
-        if(arr.concat) {
-         temp = [];
-            for(i = 0, _i = arr.length; i < _i; i++) {
-             temp[i] = arguments.callee(arr[i]);
+            else {
+                popper = kc.searchStack({position:'last'});
             }
-        }
-        else {
-         temp = {};
-            for(i in arr) {
-             temp[i] = arguments.callee(arr[i]);
-            }       
-        }
-     return temp;
-    }
-}
-
-kc.register = function(_keys, type, callback) {
- //Need to clone the keys object, since JavaScript passes objects by reference.
- kc.listeners[kc.listeners.length] = {
-    keys : kc.clone(_keys),
-    type : type,
-    callback : callback
- };
- return true;
-}
-
-kc.dispatch = function(action, type, evt) {
- var i, _i, listener, item, listen_count, stack_count, cb_return, isType, k, _k, t, _t;
-    for( i = 0, _i = kc.listeners.length; i < _i; i++ ) {
-     listener = kc.listeners[i];
-     item = null;
-     listen_count = 0;
-     stack_count = 0;
-     isType = false;
-        //determine listener type
-        if( (typeof listener.type).toLowerCase() !== 'string' ) {
-            for( t = 0, _t = listener.type.length; t < _t; t++ ) {
-                if( listener.type[t] === type ) {
-                 isType = true;
-                 break;
-                }
-            }
-        }
-        else if( listener.type === type ) {
-         isType = true;
-        }
-        if( isType ) {
-            for( item in kc.keyStack ) {
-                for( k = 0, _k = listener.keys.length; k < _k; k++ ) {
-                    if( listener.keys[k] === item ) {
-                     listen_count++;
+            kc.dispatch(action, 'up', e);
+            kc.popStack(popper.name);
+            /**
+             * ff-win alt bug
+             * Since we cant register a keyup for alt when it is ustacked
+             * below anther character, we need to fake register the keyup when
+             * the key above it is registered this is not a perfect implementation,
+             * but it works for the most part
+             */
+            if (kc.p.o.win && kc.p.b.gecko) {
+                popper_first = kc.searchStack({position:'first'});
+                popper_last = kc.searchStack({position:'last'});
+                if(popper_last && popper_last.name === 'ALT') {
+                    if ((action.name === 'SHIFT' ||
+                            action.name === 'CONTROL') ||
+                            (popper_first && popper_first.name === 'ALT')) {
+                        kc.dispatch(action, 'up', e);
+                        kc.popStack('ALT');
                     }
                 }
-             stack_count++;
             }
-            //callback executer
-            if(
-                listen_count > 0 &&
-                listen_count === stack_count &&
-                listen_count === listener.keys.length
-            ) {
-             cb_return = listener.callback(action, type);
-                if( !cb_return ) {
-                 kc.killEvent(evt);
-                 return false;
+        }
+        return true;
+    };
+
+    /**
+     * Clone Elements
+     *
+     * @param {Object|String} arr
+     */
+    kc.clone = function (arr) {
+        var i, _i, temp;
+        if (typeof arr !== 'object') {
+            return arr;
+        }
+        else {
+            if(arr.concat) {
+                temp = [];
+                for(i = 0, _i = arr.length; i < _i; i++) {
+                    temp[i] = arguments.callee(arr[i]);
                 }
-                else {
-                 return true;
+            }
+            else {
+                temp = {};
+                for (i in arr) {
+                    if (arr.hasOwnProperty(i)) {
+                        temp[i] = arguments.callee(arr[i]);
+                    }
+                }
+            }
+            return temp;
+        }
+    };
+
+    /**
+     * Register Keys
+     *
+     * @param {Array} _keys
+     * @param {String} type
+     * @param {Function} callback
+     * @return {Bool}
+     */
+    kc.register = function (_keys, type, callback) {
+        //Need to clone the keys object
+        kc.listeners[kc.listeners.length] = {
+            keys : kc.clone(_keys),
+            type : type,
+            callback : callback
+        };
+        return true;
+    };
+
+    kc.dispatch = function(action, type, evt) {
+        var i, _i, listener, item, listen_count, stack_count,
+            cb_return, isType, k, _k, t, _t;
+        for (i = 0, _i = kc.listeners.length; i < _i; i++) {
+            listener = kc.listeners[i];
+            item = null;
+            listen_count = 0;
+            stack_count = 0;
+            isType = false;
+            //determine listener type
+            if ((typeof listener.type).toLowerCase() !== 'string') {
+                for (t = 0, _t = listener.type.length; t < _t; t++) {
+                    if (listener.type[t] === type) {
+                        isType = true;
+                        break;
+                    }
+                }
+            }
+            else if (listener.type === type) {
+                isType = true;
+            }
+            if (isType) {
+                for(item in kc.keyStack) {
+                    if (kc.keyStack.hasOwnProperty(item)) {
+                        for (k = 0, _k = listener.keys.length; k < _k; k++) {
+                            if (listener.keys[k] === item) {
+                                listen_count++;
+                            }
+                        }
+                        stack_count++;
+                    }
+                }
+                //callback executer
+                if (listen_count > 0 && listen_count === stack_count &&
+                        listen_count === listener.keys.length) {
+                    cb_return = listener.callback(action, type);
+                    if (!cb_return) {
+                        kc.killEvent(evt);
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
                 }
             }
         }
-    }
- return true;
-}
+        return true;
+    };
 
-kc.killEvent = function(evt) {
-    if( evt.preventDefault ) {
-     evt.preventDefault();
-    }
-}
+    /**
+     * Kill Event
+     *
+     * @param {Event} evt
+     * @return {Bool}
+     */
+    kc.killEvent = function (evt) {
+        if (evt.preventDefault) {
+            evt.preventDefault();
+        }
+        return true;
+    };
 
-kc.pushStack = function(name, val) {
- kc.keyStack[name] = val;
- return true;
-}
+
+    /**
+     * Push to stack
+     * 
+     * @param {String} name
+     * @param {String} val
+     * @return {Bool}
+     */
+    kc.pushStack = function (name, val) {
+        kc.keyStack[name] = val;
+        return true;
+    };
 
 kc.searchStack = function(options) {
  var i, _i, prop, item1, item2, s, _s;
