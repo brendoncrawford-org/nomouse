@@ -843,122 +843,193 @@
         };
     };
     
-    nomouse.register = function(elm, val, index) {
-     var numLabel, _numLabel, elmPos;
-     elmPos = nomouse.pos(elm);
-     numLabel = document.createElement('div');
-     numLabel.appendChild(document.createTextNode(val));
-     numLabel.style.position = 'absolute';
-     numLabel.style.top = elmPos.top + 'px';
-     numLabel.style.left = elmPos.left + 'px';
-     numLabel.style.fontWeight = 'normal';
-     numLabel.style.fontSize = '12px';
-     numLabel.style.fontFamily = 'Courier, Courier New, Andale Mono, monospace';
-     numLabel.style.backgroundColor = '#000000';
-     numLabel.style.color = '#FFFFFF';
-     numLabel.style.padding = '1px';
-     numLabel.style.letterSpacing = '0px';
-     numLabel.style.border = '1px solid green';
-     numLabel.style.zIndex = nomouse.zindexer;
-     numLabel.className = 'nomouse';
-     nomouse.container.appendChild(numLabel);
-     nomouse.nodemap[index] = {
-      node : elm
-     };
-     nomouse.zindexer++;
-    }
+    /**
+     * Register a new label
+     *
+     * @param {HTMLElement} elm
+     * @param {String} val
+     * @param {Int} index
+     * @return {Bool}
+     */
+    nomouse.register = function (elm, val, index) {
+        var numLabel, _numLabel, elmPos;
+        elmPos = nomouse.pos(elm);
+        numLabel = document.createElement('div');
+        numLabel.appendChild(document.createTextNode(val));
+        numLabel.style.position = 'absolute';
+        numLabel.style.top = elmPos.top + 'px';
+        numLabel.style.left = elmPos.left + 'px';
+        numLabel.style.fontWeight = 'normal';
+        numLabel.style.fontSize = '12px';
+        numLabel.style.fontFamily =
+            'Courier, Courier New, Andale Mono, monospace';
+        numLabel.style.backgroundColor = '#000000';
+        numLabel.style.color = '#FFFFFF';
+        numLabel.style.padding = '1px';
+        numLabel.style.letterSpacing = '0px';
+        numLabel.style.border = '1px solid green';
+        numLabel.style.zIndex = nomouse.zindexer;
+        numLabel.className = 'nomouse';
+        nomouse.container.appendChild(numLabel);
+        nomouse.nodemap[index] = {
+            node : elm
+        };
+        nomouse.zindexer++;
+        return true;
+    };
+
+    /**
+     * Fire click event
+     *
+     * @param {HTMLElement} elm
+     * @return {Bool}
+     */
+    nomouse.doClick = function (elm) {
+        var evtObj;
+        evtObj = unsafeWindow.document.createEvent('MouseEvents');
+        // This is a deusie
+        evtObj.initMouseEvent('click', true, true, unsafeWindow,
+                              1, 12, 345, 7, 220, false, false,
+                              true, false, 0, null);
+        elm.dispatchEvent(evtObj);
+        return true;
+    };
     
-    nomouse.doClick = function(elm) {
-     var evtObj;
-     evtObj = unsafeWindow.document.createEvent('MouseEvents');
-     evtObj.initMouseEvent( 'click', true, true, unsafeWindow, 1, 12, 345, 7, 220, false, false, true, false, 0, null );
-     elm.dispatchEvent( evtObj );
-    }
-    
-    nomouse.press = function(action,type){
-     //input key - find element
-        if(type === 'down') {
-         nomouse.process( action.val );
+    /**
+     * Handle a keypress
+     *
+     * @param {String} action
+     * @param {String} type
+     * @return {Bool}
+     */
+    nomouse.press = function (action, type){
+        // Input key - find element
+        if (type === 'down') {
+            nomouse.process(action.val);
         }
-     return false;
-    }
+        return false;
+    };
     
-    //enter key - simulate click
-    nomouse.enter = function(action,type) {
-        if(nomouse.lastNode !== null) {
-         nomouse.doClick(nomouse.lastNode.node);
+    /**
+     * Simulate mouse click when enter is hit
+     *
+     * @param {String} action
+     * @param {String} type
+     * @return {Bool}
+     */
+    nomouse.enter = function (action, type) {
+        if (nomouse.lastNode !== null) {
+            nomouse.doClick(nomouse.lastNode.node);
         }
-     return true;
-    }
+        return true;
+    };
     
-    nomouse.showLabels = function() {
-     nomouse.container.style.display = 'block';
-    }
+    /**
+     * Show Labels
+     * 
+     * @return {Bool}
+     */
+    nomouse.showLabels = function () {
+        nomouse.container.style.display = 'block';
+        return true;
+    };
     
-    nomouse.cleanup = function() {
-     nomouse.container.style.display = 'none';
-     nomouse.kill();
-    }
+    /**
+     * Cleanups
+     * 
+     * @return {Bool}
+     */
+    nomouse.cleanup = function () {
+        nomouse.container.style.display = 'none';
+        nomouse.kill();
+    };
     
-    nomouse.process = function(key){
-     var num, elm;
-     nomouse.killTimer();
-     nomouse.current += key;
-     window.status = nomouse.current;
-     nomouse.timer = window.setTimeout(nomouse.kill,nomouse.timeout);
-     strID = nomouse.getCodeID(nomouse.chars, nomouse.current);
-        if(nomouse.nodemap[strID] !== undefined) {
-            if(nomouse.lastNode !== null) {
-             nomouse.lastNode.node.style.backgroundColor = nomouse.lastNode.backgroundColor;
-             nomouse.lastNode.node.style.border = nomouse.lastNode.border;
-             nomouse.lastNode.node.style.color = nomouse.lastNode.color;
-             nomouse.lastNode.node.style.backgroundImage = nomouse.lastNode.backgroundImage;
+    /**
+     * Main processing
+     *
+     * @param {String} key
+     * @return {Bool}
+     */
+    nomouse.process = function (key){
+        var num, elm;
+        nomouse.killTimer();
+        nomouse.current += key;
+        window.status = nomouse.current;
+        nomouse.timer = window.setTimeout(nomouse.kill,nomouse.timeout);
+        strID = nomouse.getCodeID(nomouse.chars, nomouse.current);
+        if (nomouse.nodemap[strID] !== undefined) {
+            if (nomouse.lastNode !== null) {
+                nomouse.lastNode.node.style.backgroundColor =
+                    nomouse.lastNode.backgroundColor;
+                nomouse.lastNode.node.style.border =
+                    nomouse.lastNode.border;
+                nomouse.lastNode.node.style.color = nomouse.lastNode.color;
+                nomouse.lastNode.node.style.backgroundImage =
+                    nomouse.lastNode.backgroundImage;
             }
-         elm = nomouse.nodemap[strID].node;
-         nomouse.lastNode = {
-            node : elm,
-            backgroundColor : elm.style.backgroundColor,
-            border : elm.style.border,
-            color : elm.style.color,
-            backgroundImage : elm.style.backgroundImage
-         };
-         elm.style.backgroundColor = "#FF0";
-         elm.style.border = "1px solid #F00";
-         elm.style.color = "#000";
-         elm.style.backgroundImage = "none";
+            elm = nomouse.nodemap[strID].node;
+            nomouse.lastNode = {
+                node : elm,
+                backgroundColor : elm.style.backgroundColor,
+                border : elm.style.border,
+                color : elm.style.color,
+                backgroundImage : elm.style.backgroundImage
+            };
+            elm.style.backgroundColor = "#FF0";
+            elm.style.border = "1px solid #F00";
+            elm.style.color = "#000";
+            elm.style.backgroundImage = "none";
         }
-         
-    }
+        return true;
+    };
     
-    nomouse.getCodeID = function(chars, val) {
-     var i, out;
-     out = '';
-        for( i = 0; i < val.length; i++ ) {
-         valChar = val.charAt(i);
-         valIndex = (chars.indexOf(valChar)+1).toString();
-         out += valIndex;
+    /**
+     * Get code
+     *
+     * @param {Object} chars
+     * @param {String} val
+     * @return {String}
+     */
+    nomouse.getCodeID = function (chars, val) {
+        var i, out;
+        out = '';
+        for(i = 0; i < val.length; i++) {
+            valChar = val.charAt(i);
+            valIndex = (chars.indexOf(valChar)+1).toString();
+            out += valIndex;
         }
-     return out;
-    }
+        return out;
+    };
     
-    nomouse.kill = function() {
-     nomouse.killTimer();
-     nomouse.current = '';
-     window.status = window.defaultStatus;
-     return true;
-    }
-    
+    /**
+     * Deactivate
+     * 
+     * @return {Bool}
+     */
+    nomouse.kill = function () {
+        nomouse.killTimer();
+        nomouse.current = '';
+        window.status = window.defaultStatus;
+        return true;
+    };
+
+    /**
+     * Kill Timer
+     * 
+     * @return {Bool}
+     */
     nomouse.killTimer = function(){
         if(nomouse.timer !== null) {
-         window.clearTimeout(nomouse.timer);
-         nomouse.timer = null;
-         return true;
+            window.clearTimeout(nomouse.timer);
+            nomouse.timer = null;
+            return true;
         }
         else {
-         return false;
+            return false;
         }
-    }
+    };
     
- nomouse.init();
+    // Start NoMouse
+    nomouse.init();
     
 })();
