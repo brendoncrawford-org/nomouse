@@ -15,6 +15,9 @@
 
     /**
      * KeyCommander
+     *
+     * @author BrendonCrawford
+     * @created 2007-06-01
      */
     kc = {};
     kc.stackWiper = null;
@@ -478,269 +481,354 @@
         return false;
     };
 
-kc.popStack = function(name) {
- delete kc.keyStack[name];
- return true;
-}
 
-kc.getAction = function(keyCode, charCode) {
- var item, c, _c, s, _s, action, thisChar, out, found, val;
- found = false;
-    main : for( action in kc.map ) {
-     item = kc.map[action];
-        //search char list
-        for(  c = 0, _c = item.c.length; c < _c; c++ ) {
-         thisChar = item.c[c];
-            if( charCode === thisChar ) {
-             out = {
-                found : true,
-                keyCode : item.k,
-                charCode : thisChar,
-                secKeys : item.s,
-                name : action,
-                printable : item.p,
-                val : item.v
-             };
-             found = true;
-             break main;
+    /**
+     * Pop item from stack
+     *
+     * @param {String} name
+     * @return {Bool}
+     */
+    kc.popStack = function (name) {
+        delete kc.keyStack[name];
+        return true;
+    };
+
+    /**
+     * Get an action
+     *
+     * @param {Int} keyCode
+     * @param {Int} charCode
+     * @return {Bool}
+     */
+    kc.getAction = function(keyCode, charCode) {
+        var item, c, _c, s, _s, action, thisChar, out, found, val;
+        found = false;
+        main : for (action in kc.map) {
+            if (kc.map.hasOwnProperty(action)) {
+                item = kc.map[action];
+                // Search char list
+                for (c = 0, _c = item.c.length; c < _c; c++) {
+                    thisChar = item.c[c];
+                    if (charCode === thisChar) {
+                        out = {
+                            found : true,
+                            keyCode : item.k,
+                            charCode : thisChar,
+                            secKeys : item.s,
+                            name : action,
+                            printable : item.p,
+                            val : item.v
+                        };
+                        found = true;
+                        break main;
+                    }
+                }
+                // Search secondary key list
+                // A secondary list is only valid if control characters exist
+                for (s = 0, _s = item.s.length; s < _s; s++) {
+                    thisSecKey = item.s[s];
+                    // Found in char list
+                    if (keyCode === thisSecKey) {
+                        out = {
+                            found : true,
+                            keyCode : item.k,
+                            charCode : thisSecKey,
+                            secKeys : item.s,
+                            name : action,
+                            printable : item.p,
+                            val : item.v
+                        };
+                        found = true;
+                        break main;
+                    }
+                }
+                // Search primary key
+                if (item.k === keyCode) {
+                    out = {
+                        found : true,
+                        keyCode : item.k,
+                        charCode : item.k,
+                        secKeys : item.s,
+                        name : action,
+                        printable : item.p,
+                        val : item.v
+                    };
+                    found = true;
+                    break main; 
+                }
             }
         }
-        //search secondary key list
-        //a secondary list isonly valid if control characters exist
-        for(  s = 0, _s = item.s.length; s < _s; s++ ) {
-         thisSecKey = item.s[s];
-            //found in char list
-            if( keyCode === thisSecKey) {
-             out = {
-                found : true,
-                keyCode : item.k,
-                charCode : thisSecKey,
-                secKeys : item.s,
-                name : action,
-                printable : item.p,
-                val : item.v
-             };
-             found = true;
-             break main;
-            }
+        // Nothing found
+        if (!found) {
+            val = (keyCode !== 0 ?
+                   String.fromCharCode(keyCode) :
+                   String.fromCharCode(charCode));
+            out = {
+                found : false,
+                keyCode : keyCode,
+                charCode : charCode,
+                secKeys : [],
+                name : 'UNKNOWN',
+                printable : val.length ? true : false, 
+                val : val
+            };
         }
-        //search primary key
-        if( item.k === keyCode ) {
-         out = {
-            found : true,
-            keyCode : item.k,
-            charCode : item.k,
-            secKeys : item.s,
-            name : action,
-            printable : item.p,
-            val : item.v
-         };
-         found = true;
-         break main;        
+        return out;
+    };
+
+    /**
+     * Add listeners
+     *
+     * @param {HTMLElement} elm
+     * @param {String} ev
+     * @param {Function} callback
+     */
+    kc.bind = function(elm, ev, callback) {
+        if(elm.attachEvent) {
+            elm.attachEvent( 'on'+ev, callback);
         }
+        else if(elm.addEventListener) {
+            elm.addEventListener( ev, callback, false);
+        }
+        return true;
     }
-    //nothing found
-    if( !found ) {
-     val = (keyCode !== 0 ? String.fromCharCode( keyCode ) :
-            String.fromCharCode( charCode ) );
-     out = {
-        found : false,
-        keyCode : keyCode,
-        charCode : charCode,
-        secKeys : [],
-        name : 'UNKNOWN',
-        printable : val.length ? true : false, 
-        val : val
-     };
-    }
- return out;
-}
 
-kc.bind = function(elm, ev, callback) {
-    if(elm.attachEvent) {
-     elm.attachEvent( 'on'+ev, callback);
-    }
-    else if(elm.addEventListener) {
-     elm.addEventListener( ev, callback, false);
-    }
-}
+    // Run init
+    kc.init();
 
-kc.init();
+    /**
+      * NoMouse
+      *
+      * @author Brendon Crawford <http://aphexcreations.net>
+      * @created 2007-06-01
+      */
+    nomouse = {};
+    nomouse.timeout = 3000;
+    nomouse.timer = null;
+    nomouse.lastNode = null;
+    nomouse.current = '';
+    nomouse.nodemap = {};
+    nomouse.zindexer = 100;
+    nomouse.built = false;
+    nomouse.container = null;
+    nomouse.limit = 1000;
+    nomouse.trigger = null;
+    nomouse.chars = null;
+    nomouse.keyconf = {
+        trigger : {
+            win : 'SHIFT SPACE',
+            osx : 'ALT',
+            linux : 'ALT'
+        },
+        labels : 'J K L SEMICOLON'
+    };
 
-/**** NOMOUSE ********************************************************/
-/**
- * NoMouse
- * @author Brendon Crawford <http://aphexcreations.net>
- * @created 2007-06-01
- */
- 
- nomouse = new Object;
- nomouse.timeout = 3000;
- nomouse.timer = null;
- nomouse.lastNode = null;
- nomouse.current = '';
- nomouse.nodemap = {};
- nomouse.zindexer = 100;
- nomouse.built = false;
- nomouse.container = null;
- nomouse.limit = 1000;
- nomouse.trigger = null;
- nomouse.chars = null;
- nomouse.keyconf = {
-    trigger : {
-        win : 'SHIFT SPACE',
-        osx : 'ALT',
-        linux : 'ALT'
-    },
-    labels : 'J K L SEMICOLON'
- };
-
-    nomouse.buildContainer = function(){
-     nomouse.container = document.body.appendChild(document.createElement('div'));
-     nomouse.container.id = 'nomouse_container';
-     nomouse.container.style.display = 'none';
-     nomouse.container.style.position = 'absolute';
-     nomouse.container.style.top = '0px';
-     nomouse.container.style.left = '0px';  
-    }
+    /**
+     * Build Container
+     *
+     * @return {Bool}
+     */
+    nomouse.buildContainer = function (){
+        nomouse.container = document.body.appendChild(document.createElement('div'));
+        nomouse.container.id = 'nomouse_container';
+        nomouse.container.style.display = 'none';
+        nomouse.container.style.position = 'absolute';
+        nomouse.container.style.top = '0px';
+        nomouse.container.style.left = '0px';
+        return true;
+    };
     
-    //It is necesarry to clone object before modifying it.
-    nomouse.arr_add = function(arr, val){
-     var temp;
-     temp = kc.clone(arr);
-     temp[temp.length] = val;
-     return temp;
-    }
+    /**
+     * It is necesarry to clone object before modifying it.
+     *
+     * @param {Array} arr
+     * @param {String} val
+     * @return {Array}
+     */
+    nomouse.arr_add = function (arr, val){
+        var temp;
+        temp = kc.clone(arr);
+        temp[temp.length] = val;
+        return temp;
+    };
     
+    /**
+     * Prefs setup
+     *
+     * @return {String}
+     */
     nomouse.prefs = function() {
-     var _trigger, trigger, _labels, labels, i, _i, chars;
-      chars = "";
-     _trigger = GM_getValue('trigger', null);
-     _labels = GM_getValue('labels', null);
-        if( _trigger === null || _trigger === '' ) {
-            if( kc.p.o.osx ) {
-             _trigger = nomouse.keyconf.trigger.osx;
+        var _trigger, trigger, _labels, labels, i, _i, chars;
+        chars = "";
+        _trigger = GM_getValue('trigger', null);
+        _labels = GM_getValue('labels', null);
+        if(_trigger === null || _trigger === '') {
+            if (kc.p.o.osx) {
+                _trigger = nomouse.keyconf.trigger.osx;
             }
-            else if( kc.p.o.win ) {
-             _trigger = nomouse.keyconf.trigger.win;
+            else if (kc.p.o.win) {
+                _trigger = nomouse.keyconf.trigger.win;
             }
             else if (kc.p.o.linux) {
-             _trigger = nomouse.keyconf.trigger.linux;
+                _trigger = nomouse.keyconf.trigger.linux;
             }
-         GM_setValue('trigger', _trigger);
+            GM_setValue('trigger', _trigger);
         }
-        if( _labels === null || _labels === '' ) {
-         _labels = nomouse.keyconf.labels;
-         GM_setValue('labels', _labels);     
+        if (_labels === null || _labels === '') {
+            _labels = nomouse.keyconf.labels;
+            GM_setValue('labels', _labels);  
         }
-     trigger = _trigger.split(/\W+/ig);
-     labels = _labels.split(/\W+/ig);
-     kc.register( trigger , ['up','down','press'] , nomouse.toggler );
-        for(i = 0, _i = labels.length; i < _i; i++) {
-            //For now we can only handle single character labels
-            if(kc.map[labels[i]].v.length === 1) {
-             kc.register( nomouse.arr_add(trigger, labels[i]) , ['down','press'] , nomouse.press );
-             chars += kc.map[labels[i]].v;
+        trigger = _trigger.split(/\W+/ig);
+        labels = _labels.split(/\W+/ig);
+        kc.register(trigger , ['up','down','press'] , nomouse.toggler);
+        for (i = 0, _i = labels.length; i < _i; i++) {
+            // For now we can only handle single character labels
+            if (kc.map[labels[i]].v.length === 1) {
+                kc.register(nomouse.arr_add(trigger, labels[i]),
+                            ['down','press'] , nomouse.press);
+                chars += kc.map[labels[i]].v;
             }
         }
-     kc.register( ['RETURN'] , ['down'] , nomouse.enter );
-     return chars;
-    }
+        kc.register(['RETURN'] , ['down'] , nomouse.enter);
+        return chars;
+    };
     
-    nomouse.init = function(){
-     nomouse.chars = nomouse.prefs();
-     nomouse.buildContainer();
-     nomouse.buildLabels();
-     nomouse.built = true;
-    }
+    /**
+     * NoMouse Init
+     *
+     * @return {Bool}
+     */
+    nomouse.init = function (){
+        nomouse.chars = nomouse.prefs();
+        nomouse.buildContainer();
+        nomouse.buildLabels();
+        nomouse.built = true;
+        return true;
+    };
     
-    //Not used
-    nomouse.intercept = function() {
-     //org_addEventListener =
-     //HTMLElement.prototype.addEventListener;
-     //HTMLElement.prototype.addEventListener =
-     //function(name, fpNotify, uc) { ...; org_addEventListener.call(this, name, fpNotify, uc); }
-    }
+    /**
+     * This is not currently used
+     *
+     * @return {Bool}
+     */
+    nomouse.intercept = function () {
+        //org_addEventListener =
+        //    HTMLElement.prototype.addEventListener;
+        //HTMLElement.prototype.addEventListener =
+        //        function (name, fpNotify, uc) {
+        //    org_addEventListener.call(this, name, fpNotify, uc);
+        //}
+        return false;
+    };
     
-    nomouse.buildLabels = function() {
-     var elms, i, j;
-     j = nomouse.charIncrement(nomouse.chars);
-     elms = document.evaluate("//a|//input|//select|//textarea", document, null, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
-     nomouse.zindexer += elms.snapshotLength;
-        for(i = 0, _i = elms.snapshotLength; i < _i && i < nomouse.limit; i++ ) {
-         nomouse.register(elms.snapshotItem(i), j.val, j.id);
-         j = nomouse.charIncrement(nomouse.chars, j.val);
+    /**
+     * Builds labels
+     *
+     * @return {Bool}
+     */
+    nomouse.buildLabels = function () {
+        var elms, i, j;
+        j = nomouse.charIncrement(nomouse.chars);
+        elms = document.evaluate("//a|//input|//select|//textarea",
+                                 document, null,
+                                 XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+                                 null);
+        nomouse.zindexer += elms.snapshotLength;
+        for (i = 0, _i = elms.snapshotLength;
+                 i < _i && i < nomouse.limit;
+                 i++) {
+            nomouse.register(elms.snapshotItem(i), j.val, j.id);
+            j = nomouse.charIncrement(nomouse.chars, j.val);
         }
-    }
+        return true;
+    };
     
-    nomouse.charIncrement = function( chars ) {
-     var val, carryIndex, addDigit, str, valChar, valIndex, i;
-        if(!arguments[1]) {
-         return {
-            val : chars.charAt(0),
-            id : 1
-         }
+    /**
+     * Increment character
+     *
+     * @param {Object} chars
+     * @return {Bool}
+     */
+    nomouse.charIncrement = function (chars) {
+        var val, carryIndex, addDigit, str, valChar, valIndex, i;
+        if (!arguments[1]) {
+            return {
+                val : chars.charAt(0),
+                id : 1
+            }
         }
         else {
-         val = arguments[1];
+            val = arguments[1];
         }
-     carryIndex = false;
-     addDigit = false;
-     str = '';
-     id = '';
-        for( i = val.length-1; i >= 0; i-- ) {
-         valChar = val.charAt(i);
-         valIndex = chars.indexOf(valChar);
-            //first
-            if( i === val.length-1 || carryIndex) {
-             //alert(valChar);
-             newValIndex = valIndex + 1;
-             carryIndex = false;
+        carryIndex = false;
+        addDigit = false;
+        str = '';
+        id = '';
+        for (i = val.length-1; i >= 0; i--) {
+            valChar = val.charAt(i);
+            valIndex = chars.indexOf(valChar);
+            // First
+            if (i === val.length-1 || carryIndex) {
+                newValIndex = valIndex + 1;
+                carryIndex = false;
             }
             else {
-             newValIndex = valIndex;
+                newValIndex = valIndex;
             }
-            //time to carry
-            if( newValIndex >= chars.length ) {
-             newValIndex = 0;
-             carryIndex = true;
-                if( i === 0 ) {
-                 addDigit = true;
+            // Time to carry
+            if (newValIndex >= chars.length) {
+                newValIndex = 0;
+                carryIndex = true;
+                if (i === 0) {
+                    addDigit = true;
                 }
             }
             else {
-             carryIndex = false;
+                carryIndex = false;
             }
-         str = chars.charAt(newValIndex) + str;
-         id = (newValIndex+1).toString() + id;
-            if( addDigit ) {
-             str = chars.charAt(0) + str;
-             id = (1).toString() + id;
-             addDigit = false;
+            str = chars.charAt(newValIndex) + str;
+            id = (newValIndex+1).toString() + id;
+            if (addDigit) {
+                str = chars.charAt(0) + str;
+                id = (1).toString() + id;
+                addDigit = false;
             }
         }
-     return {
-        val : str,
-        id : parseInt(id)
-     };
-    }
+        return {
+            val : str,
+            id : parseInt(id)
+        };
+    };
 
-    nomouse.toggler = function(action,type) {
-        if( type === 'down' ) {
-         nomouse.showLabels();      
+    /**
+     * Toggle
+     * 
+     * @param {String} action
+     * @param {String} type
+     * @return {Bool}
+     */
+    nomouse.toggler = function (action,type) {
+        if (type === 'down') {
+            nomouse.showLabels();      
         }
-        else if(type === 'up') {
-         nomouse.cleanup();
-            if(nomouse.lastNode !== null) {
-             nomouse.lastNode.node.focus();
+        else if (type === 'up') {
+            nomouse.cleanup();
+            if (nomouse.lastNode !== null) {
+                nomouse.lastNode.node.focus();
             }
         }
-     return false;
-    }
-    
-    //http://www.quirksmode.org/js/findpos.html
-    nomouse.pos = function(obj) {
-     var curleft = curtop = 0;
+        return false;
+    };
+
+    /**
+     * Get position
+     *
+     * @see http://www.quirksmode.org/js/findpos.html
+     * @param {HTMLElement} obj
+     * @return {Object}
+     */
+    nomouse.pos = function (obj) {
+        var curleft = curtop = 0;
         if (obj.offsetParent) {
             curleft = obj.offsetLeft
             curtop = obj.offsetTop
@@ -749,11 +837,11 @@ kc.init();
                 curtop += obj.offsetTop
             }
         }
-     return {
-        left : curleft,
-        top : curtop
-     };
-    }
+        return {
+            left : curleft,
+            top : curtop
+        };
+    };
     
     nomouse.register = function(elm, val, index) {
      var numLabel, _numLabel, elmPos;
