@@ -334,7 +334,7 @@
             listen_count = 0;
             stack_count = 0;
             isType = false;
-            //determine listener type
+            // Determine listener type
             if ((typeof listener.type).toLowerCase() !== 'string') {
                 for (t = 0, _t = listener.type.length; t < _t; t++) {
                     if (listener.type[t] === type) {
@@ -357,7 +357,7 @@
                         stack_count++;
                     }
                 }
-                //callback executer
+                // Callback executer
                 if (listen_count > 0 && listen_count === stack_count &&
                         listen_count === listener.keys.length) {
                     cb_return = listener.callback(action, type);
@@ -400,64 +400,83 @@
         return true;
     };
 
-kc.searchStack = function(options) {
- var i, _i, prop, item1, item2, s, _s;
-    //search array of names
-    if( options.names !== undefined ) {
-        for(i = 0, _i = options.names.length; i < _i; i++ ) {
-            if( kc.keyStack[options.names[i]] !== undefined ) {
-             return true;
-            }       
-        }
-    }
-    //search single name
-    else if(options.name !== undefined) {
-        if( kc.keyStack[options.name] !== undefined ) {
-         return true;
-        }
-    }
-    //search by keycode
-    else if( options.keyCode !== undefined ) {
-        //search primary keys
-        for( item1 in kc.keyStack ) {
-            if( kc.keyStack[item1].keyCode == options.keyCode ) {
-             return kc.keyStack[item1];
+    /**
+     * Search the stack
+     * 
+     * @param {Object} options
+     * @return {Bool}
+     */
+    kc.searchStack = function (options) {
+        var i, _i, prop, item1, item2, s, _s;
+        // Search array of names
+        if (options.names !== undefined) {
+            for (i = 0, _i = options.names.length; i < _i; i++) {
+                if (kc.keyStack[options.names[i]] !== undefined) {
+                    return true;
+                }       
             }
         }
-        //search secondary keys
-        for( item2 in kc.keyStack ) {
-            for( s = 0, _s = kc.keyStack[item2].secKeys.length; s < _s; s++ ) {
-                if( kc.keyStack[item2].secKeys[s] == options.keyCode ) {
-                 return kc.keyStack[item2];
+        // Search single name
+        else if (options.name !== undefined) {
+            if (kc.keyStack[options.name] !== undefined) {
+                return true;
+            }
+        }
+        // Search by keycode
+        else if (options.keyCode !== undefined) {
+            // Search primary keys
+            for (item1 in kc.keyStack) {
+                if (kc.keyStack.hasOwnProperty(item1)) {
+                    if (kc.keyStack[item1].keyCode === options.keyCode) {
+                        return kc.keyStack[item1];
+                    }
+                }
+            }
+            // Search secondary keys
+            for (item2 in kc.keyStack) {
+                if (kc.keyStack.hasOwnProperty(item2)) {
+                    for (s = 0, _s = kc.keyStack[item2].secKeys.length;
+                            s < _s; s++) {
+                        if (kc.keyStack[item2].secKeys[s] === options.keyCode) {
+                            return kc.keyStack[item2];
+                        }
+                    }
                 }
             }
         }
-    }
-    //search by position
-    else if( options.position !== undefined ) {
-        if( options.position === 'last' ) {
-         item = false;
-         for( item in kc.keyStack );
-            if(item) {
-             return kc.keyStack[item];
+        // Search by position
+        else if (options.position !== undefined) {
+            if (options.position === 'last') {
+                item = false;
+                for (item in kc.keyStack) {
+                    if (kc.keyStack.hasOwnProperty(item)) {
+                        continue;
+                    }
+                }
+                if (item) {
+                    return kc.keyStack[item];
+                }
+                else {
+                    return false;
+                }
             }
-            else {
-             return false;
+            if (options.position === 'first') {
+                item = false;
+                for (item in kc.keyStack) {
+                    if (kc.keyStack.hasOwnProperty(item)) {
+                        break;
+                    }
+                }
+                if (item) {
+                    return kc.keyStack[item];
+                }
+                else {
+                    return false;
+                }
             }
         }
-        if( options.position === 'first' ) {
-         item = false;
-         for( item in kc.keyStack ) break;
-            if(item) {
-             return kc.keyStack[item];
-            }
-            else {
-             return false;
-            }
-        }
-    }
- return false;
-}
+        return false;
+    };
 
 kc.popStack = function(name) {
  delete kc.keyStack[name];
