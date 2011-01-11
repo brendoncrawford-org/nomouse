@@ -13,7 +13,7 @@ lint:
 
 compress:
 	@echo "Compressing js files..."
-	@./builders/compress.bash ./build/tmp.js ./build/compressed.js
+	@yui-compressor --charset=UTF-8 --type=js --preserve-semi --line-break=1000 -o nomouse.user.js nomouse.user-full.js
 
 clean:
 	@echo "Cleaning..."
